@@ -22,6 +22,10 @@ app.add_middleware(
 def on_startup():
     init_db()
 
+@app.get("/")
+def read_root():
+    return {"status": "online", "message": "SentinelAI API is running!"}
+
 class PromptRequest(BaseModel):
     prompt: str
     user_id: str = "anonymous"  # Extracted from JWT token in production
