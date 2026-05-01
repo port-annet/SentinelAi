@@ -3,8 +3,9 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 from datetime import datetime
 import os
 
-# SQLite database for local development, easily swappable to PostgreSQL
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./sentinel.db")
+# SQLite database for local/Vercel development, easily swappable to PostgreSQL
+# Use /tmp for serverless environments as it's the only writable directory
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:////tmp/sentinel.db")
 
 engine = create_engine(
     DATABASE_URL, connect_args={"check_same_thread": False} if "sqlite" in DATABASE_URL else {}
