@@ -5,13 +5,21 @@ from pydantic import BaseModel
 from database import init_db, get_db, PromptLog, UserBehavior
 from analyzer import analyze_prompt, mask_data
 from datetime import datetime
+import os
 
-app = FastAPI(title="SentinelAI API", description="AI Risk Monitoring API")
+app = FastAPI(
+    title="SentinelAI Enterprise API", 
+    version="1.0.0",
+    description="Corporate AI Risk and Data Loss Prevention (DLP) Engine"
+)
 
 # Setup CORS to allow Chrome Extension and Frontend Dashboard
+# In production, replace "*" with your actual corporate domains (e.g., ["https://sentinel-security.com"])
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*").split(",")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # For demo purposes. In prod: restrict to specific domains/extension IDs
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
