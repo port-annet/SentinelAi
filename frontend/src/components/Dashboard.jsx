@@ -20,14 +20,56 @@ function timeAgo(isoString) {
 // --- Risk Badge ---
 const RiskBadge = ({ risk }) => {
   const colors = {
-    HIGH: { bg: 'rgba(239, 68, 68, 0.15)', color: 'var(--danger-color)' },
-    WARNING: { bg: 'rgba(245, 158, 11, 0.15)', color: 'var(--warning-color)' },
-    SAFE: { bg: 'rgba(52, 211, 153, 0.15)', color: 'var(--success-color)' },
+    HIGH: { bg: 'rgba(239, 68, 68, 0.15)', color: '#FF4D4D', border: '1px solid rgba(239, 68, 68, 0.3)' },
+    WARNING: { bg: 'rgba(245, 158, 11, 0.15)', color: '#FCD34D', border: '1px solid rgba(245, 158, 11, 0.3)' },
+    SAFE: { bg: 'rgba(52, 211, 153, 0.15)', color: '#34D399', border: '1px solid rgba(52, 211, 153, 0.3)' },
   };
   const style = colors[risk] || colors.SAFE;
   return (
-    <span style={{ background: style.bg, color: style.color, padding: '0.3rem 0.8rem', borderRadius: '1rem', fontSize: '0.75rem', fontWeight: '700', letterSpacing: '0.05em' }}>
+    <span style={{ 
+      background: style.bg, 
+      color: style.color, 
+      border: style.border,
+      padding: '0.35rem 0.85rem', 
+      borderRadius: '2rem', 
+      fontSize: '0.75rem', 
+      fontWeight: '800', 
+      letterSpacing: '0.05em',
+      textTransform: 'uppercase',
+      boxShadow: `0 0 10px ${style.bg}`
+    }}>
       {risk}
+    </span>
+  );
+};
+
+// --- Action Badge (New Corporate Feature) ---
+const ActionBadge = ({ log }) => {
+  // Parsing the stored "[BLOCK] XXX..." format into a clean UI pill
+  let action = "ALLOW";
+  if (log.masked_snippet?.startsWith("[BLOCK]")) action = "BLOCK";
+  if (log.masked_snippet?.startsWith("[WARN]")) action = "WARN";
+  if (log.masked_snippet?.startsWith("[ESCALATE]")) action = "ESCALATE";
+  
+  const colors = {
+    BLOCK: { bg: '#991B1B', color: 'white' },
+    ESCALATE: { bg: '#7F1D1D', color: '#FCA5A5', border: '1px solid #FCA5A5' },
+    WARN: { bg: '#B45309', color: 'white' },
+    ALLOW: { bg: '#065F46', color: 'white' },
+  };
+  const style = colors[action] || colors.ALLOW;
+
+  return (
+    <span style={{ 
+      background: style.bg, 
+      color: style.color, 
+      border: style.border || 'none',
+      padding: '0.2rem 0.6rem', 
+      borderRadius: '0.25rem', 
+      fontSize: '0.7rem', 
+      fontWeight: 'bold', 
+    }}>
+      {action}
     </span>
   );
 };
@@ -79,20 +121,31 @@ const OverviewContent = ({ stats, logs, loading, onRefresh }) => (
             <thead>
               <tr style={{ color: 'var(--text-muted)', borderBottom: '1px solid var(--border-color)', fontSize: '0.9rem' }}>
                 <th style={{ padding: '1rem 0', fontWeight: '500' }}>Time</th>
-                <th style={{ padding: '1rem 0', fontWeight: '500' }}>User</th>
+                <th style={{ padding: '1rem 0', fontWeight: '500' }}>Employee Identity</th>
                 <th style={{ padding: '1rem 0', fontWeight: '500' }}>Risk Level</th>
+                <th style={{ padding: '1rem 0', fontWeight: '500' }}>Policy Action</th>
                 <th style={{ padding: '1rem 0', fontWeight: '500' }}>Reason</th>
-                <th style={{ padding: '1rem 0', fontWeight: '500' }}>Trigger Snippet</th>
+                <th style={{ padding: '1rem 0', fontWeight: '500' }}>Masked Payload</th>
               </tr>
             </thead>
             <tbody>
               {logs.map((log, idx) => (
-                <tr key={log.id} style={{ borderTop: idx > 0 ? '1px solid var(--border-color)' : 'none' }}>
+                <tr key={log.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', transition: 'background-color 0.2s', ':hover': { background: 'rgba(255,255,255,0.02)'} }}>
                   <td style={{ padding: '1.2rem 0', color: 'var(--text-muted)', fontSize: '0.85rem', whiteSpace: 'nowrap' }}>{timeAgo(log.timestamp)}</td>
-                  <td style={{ padding: '1.2rem 0', fontWeight: '500', fontSize: '0.9rem' }}>{log.user_id}</td>
+                  <td style={{ padding: '1.2rem 0', fontWeight: '600', fontSize: '0.9rem', color: log.user_id !== 'anonymous' ? '#60A5FA' : 'var(--text-muted)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px' }}>
+                        {log.user_id?.charAt(0).toUpperCase() || '?'}
+                      </div>
+                      {log.user_id}
+                    </div>
+                  </td>
                   <td style={{ padding: '1.2rem 0' }}><RiskBadge risk={log.risk_type} /></td>
-                  <td style={{ padding: '1.2rem 0', color: 'var(--text-muted)', fontSize: '0.85rem', maxWidth: '180px' }}>{log.reason}</td>
-                  <td style={{ padding: '1.2rem 0', fontFamily: 'monospace', color: 'var(--text-muted)', fontSize: '0.8rem', maxWidth: '220px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{log.masked_snippet}</td>
+                  <td style={{ padding: '1.2rem 0' }}><ActionBadge log={log} /></td>
+                  <td style={{ padding: '1.2rem 0', color: '#9CA3AF', fontSize: '0.85rem', maxWidth: '200px' }}>{log.reason}</td>
+                  <td style={{ padding: '1.2rem 0', fontFamily: '"JetBrains Mono", monospace', color: '#D1D5DB', fontSize: '0.8rem', maxWidth: '250px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', background: 'rgba(0,0,0,0.2)', borderRadius: '4px', paddingLeft: '8px' }}>
+                    {log.masked_snippet?.replace(/^\[.*?\]\s*/, '')} {/* Strips the action tag before showing content */}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -231,7 +284,7 @@ const Dashboard = () => {
     setError(null);
     try {
       const [logsRes, statsRes] = await Promise.all([
-        fetch(`${API_BASE}/logs?limit=50`),
+        fetch(`${API_BASE}/logs?limit=100`), // Fetch more logs for the corporate dashboard
         fetch(`${API_BASE}/stats`)
       ]);
       if (!logsRes.ok || !statsRes.ok) throw new Error('API error');
@@ -239,7 +292,7 @@ const Dashboard = () => {
       setLogs(logsData);
       setStats(statsData);
     } catch (err) {
-      setError('Could not connect to backend. Make sure the Python API is running on port 8000.');
+      setError('Could not connect to backend. Make sure the API is live.');
     } finally {
       setLoading(false);
     }
